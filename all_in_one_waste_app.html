@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Waste Collection System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="bg-light">
+<div class="container py-5">
+  <h2 class="text-center mb-4">Smart Waste Collection Web App</h2>
+
+  <!-- Role Selector -->
+  <div class="mb-4 text-center">
+    <button class="btn btn-outline-primary" onclick="switchRole('worker')">Worker Login</button>
+    <button class="btn btn-outline-success" onclick="switchRole('citizen')">Citizen View</button>
+    <button class="btn btn-outline-danger" onclick="switchRole('officer')">Health Officer</button>
+  </div>
+
+  <!-- Worker Login -->
+  <div id="workerSection" class="hidden">
+    <div class="card p-4 mx-auto" style="max-width: 400px;">
+      <h4>Worker Login</h4>
+      <input type="text" id="workerID" class="form-control mb-2" placeholder="Worker ID">
+      <input type="password" id="password" class="form-control mb-3" placeholder="Password">
+      <button onclick="loginWorker()" class="btn btn-primary">Login</button>
+    </div>
+
+    <div id="workerApp" class="hidden mt-4">
+      <h5>Welcome, <span id="workerName"></span></h5>
+      <h6>Assigned Houses:</h6>
+      <ul id="assignedList" class="list-group mb-3"></ul>
+    </div>
+  </div>
+
+  <!-- Citizen Portal -->
+  <div id="citizenSection" class="hidden">
+    <div class="card p-4 mx-auto" style="max-width: 400px;">
+      <h4>My Waste Status</h4>
+      <input type="text" id="citizenHouseID" class="form-control mb-3" placeholder="Enter House ID">
+      <button onclick="checkStatus()" class="btn btn-success">Check Status</button>
+      <div id="statusResult" class="mt-3"></div>
+    </div>
+  </div>
+
+  <!-- Health Officer Dashboard -->
+  <div id="officerSection" class="hidden">
+    <h4>Ward Status Dashboard</h4>
+    <table class="table table-bordered">
+      <thead><tr><th>Ward</th><th>Total Houses</th><th>Collected</th><th>Missed</th><th>Rate</th></tr></thead>
+      <tbody id="dashboardTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const workers = {
+    "worker001": {
+      password: "pass123",
+      name: "Ravi Kumar",
+      assigned: ["HH101", "HH102", "HH103"]
+    }
+  };
+
+  const collectionLogs = { "HH101": true, "HH102": false, "HH103": false };
+  const dashboard = [
+    { ward: "Ward 1", total: 100, collected: 82, missed: 18, rate: "82%" },
+    { ward: "Ward 2", total: 120, collected: 95, missed: 25, rate: "79%" },
+  ];
+
+  function switchRole(role) {
+    document.getElementById("workerSection").classList.add("hidden");
+    document.getElementById("citizenSection").classList.add("hidden");
+    document.getElementById("officerSection").classList.add("hidden");
+    if (role === 'worker') document.getElementById("workerSection").classList.remove("hidden");
+    else if (role === 'citizen') document.getElementById("citizenSection").classList.remove("hidden");
+    else document.getElementById("officerSection").classList.remove("hidden");
+  }
+
+  function loginWorker() {
+    const id = document.getElementById("workerID").value;
+    const pw = document.getElementById("password").value;
+    if (workers[id] && workers[id].password === pw) {
+      document.getElementById("workerApp").classList.remove("hidden");
+      document.getElementById("workerName").innerText = workers[id].name;
+      const list = document.getElementById("assignedList");
+      list.innerHTML = "";
+      workers[id].assigned.forEach(house => {
+        const li = document.createElement("li");
+        li.className = "list-group-item d-flex justify-content-between";
+        li.innerHTML = `${house} <button class='btn btn-sm btn-${collectionLogs[house] ? 'secondary' : 'success'}' onclick='markCollected(this, "${house}")'>${collectionLogs[house] ? 'Done' : 'Collected'}</button>`;
+        list.appendChild(li);
+      });
+      logGPS();
+    } else {
+      alert("Invalid login");
+    }
+  }
+
+  function markCollected(btn, house) {
+    collectionLogs[house] = true;
+    btn.className = "btn btn-sm btn-secondary";
+    btn.innerText = "Done";
+    btn.disabled = true;
+    console.log(`Collected at ${house}`);
+  }
+
+  function checkStatus() {
+    const houseID = document.getElementById("citizenHouseID").value;
+    const result = document.getElementById("statusResult");
+    result.innerHTML = collectionLogs[houseID] ?
+      `<div class='alert alert-success'>Waste Collected ✅ - Reward Unlocked!</div>` :
+      `<div class='alert alert-warning'>Not Yet Collected ❌</div>`;
+  }
+
+  function logGPS() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(position => {
+        console.log("GPS Ping:", position.coords.latitude, position.coords.longitude);
+      });
+    }
+  }
+
+  window.onload = () => {
+    const table = document.getElementById("dashboardTable");
+    dashboard.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${row.ward}</td><td>${row.total}</td><td>${row.collected}</td><td>${row.missed}</td><td>${row.rate}</td>`;
+      table.appendChild(tr);
+    });
+  };
+</script>
+</body>
+</html>
